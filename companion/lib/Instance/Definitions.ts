@@ -339,7 +339,7 @@ export class InstanceDefinitions extends CoreBase {
 				style: cloneDeep(feedback.style),
 				headline: feedback.headline,
 			}))
-                }
+        }
 
 		this.controls.importControl(location, result)
 
