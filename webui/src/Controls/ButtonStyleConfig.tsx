@@ -8,7 +8,7 @@ import {
 	PNGInputField,
 	TextInputField,
 } from '../Components/index.js'
-import { FONT_SIZES, SHOW_HIDE_TOP_BAR } from '../Constants.js'
+import { FONT_SIZES, SHOW_HIDE_TOP_BAR, BUTTON_INDICATOR_OPTIONS } from '../Constants.js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDollarSign, faFont, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { SomeButtonModel } from '@companion-app/shared/Model/ButtonModel.js'
@@ -252,7 +252,7 @@ export function ButtonStyleConfigFields({
 						<div>
 							<DropdownInputField
 								label={'Topbar'}
-								choices={SHOW_HIDE_TOP_BAR}
+								choices={BUTTON_INDICATOR_OPTIONS}
 								setValue={setShowTopBar}
 								value={(values.show_topbar as string) ?? false}
 								multiple={false}

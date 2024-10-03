@@ -6,7 +6,7 @@ import type { SurfaceRotation } from '../Surface/Util.js'
 import type { Registry } from '../Registry.js'
 import type { ButtonStyleProperties } from '@companion-app/shared/Model/StyleModel.js'
 import type { CompanionInputFieldBaseExtended, EncodeIsVisible2 } from '@companion-app/shared/Model/Options.js'
-import type { CompanionAlignment, CompanionInputFieldBase } from '@companion-module/base'
+import { CompanionAlignment, CompanionInputFieldBase } from '@companion-module/base'
 
 /**
  * Combine rgba components to a 32bit value

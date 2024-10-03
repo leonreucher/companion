@@ -64,7 +64,7 @@ export class GraphicsRenderer {
 
 		img.fillColor('black')
 
-		if (!options.remove_topbar) {
+		if (options.remove_topbar == "none") {
 			img.drawTextLine(2, 3, formatLocation(location), 'rgb(50, 50, 50)', 8)
 			img.horizontalLine(13.5, 'rgb(30, 30, 30)')
 		}
@@ -206,9 +206,9 @@ export class GraphicsRenderer {
 		drawStyle: DrawStyleButtonModel,
 		location: ControlLocation | undefined
 	): Promise<void> {
-		let showTopbar = !!drawStyle.show_topbar
+		let buttonStatusBar = drawStyle.show_topbar
 		if (drawStyle.show_topbar === 'default' || drawStyle.show_topbar === undefined) {
-			showTopbar = !options.remove_topbar
+			buttonStatusBar = options.remove_topbar
 		}
 
 		// handle upgrade from pre alignment-support configuration
@@ -220,37 +220,72 @@ export class GraphicsRenderer {
 		}
 
 		// Draw background color first
-		!showTopbar
-			? img.box(0, 0, 72, 72, parseColor(drawStyle.bgcolor))
-			: img.box(0, 14, 72, 72, parseColor(drawStyle.bgcolor))
+		switch (buttonStatusBar) {
+    case "none":
+    case "border":
+        img.box(0, 0, 72, 72, parseColor(drawStyle.bgcolor));
+        break;
+    case "top":
+        img.box(0, 14, 72, 72, parseColor(drawStyle.bgcolor));
+        break;
+    case "bottom":
+        img.box(0, 0, 72, 58, parseColor(drawStyle.bgcolor));
+        break;
+}
 
-		// Draw background PNG if exists
-		if (drawStyle.png64 !== undefined && drawStyle.png64 !== null) {
-			try {
-				let png64 = drawStyle.png64.startsWith('data:image/png;base64,') ? drawStyle.png64.slice(22) : drawStyle.png64
-				let data = Buffer.from(png64, 'base64')
-				const [halign, valign] = ParseAlignment(drawStyle.pngalignment)
+// Draw background PNG if exists
+if (drawStyle.png64 !== undefined && drawStyle.png64 !== null) {
+    try {
+        let png64 = drawStyle.png64.startsWith('data:image/png;base64,') ?
+            drawStyle.png64.slice(22) : drawStyle.png64;
+        let data = Buffer.from(png64, 'base64'); // Load the png64 data
+        const [halign, valign] = ParseAlignment(drawStyle.pngalignment);
 
-				!showTopbar
-					? await img.drawFromPNGdata(data, 0, 0, 72, 72, halign, valign, 'fit_or_shrink')
-					: await img.drawFromPNGdata(data, 0, 14, 72, 58, halign, valign, 'fit_or_shrink')
-			} catch (e) {
-				console.error('error drawing image:', e)
-				img.box(0, 14, 71, 57, 'black')
-				!showTopbar
-					? img.drawAlignedText(2, 2, 68, 68, 'PNG ERROR', 'red', 10, 'center', 'center')
-					: img.drawAlignedText(2, 18, 68, 52, 'PNG ERROR', 'red', 10, 'center', 'center')
+        switch (buttonStatusBar) {
+            case "none":
+            case "border":
+                await img.drawFromPNGdata(data, 0, 0, 72, 72, halign, valign, 'fit_or_shrink');
+                break;
+            case "top":
+                await img.drawFromPNGdata(data, 0, 14, 72, 58, halign, valign, 'fit_or_shrink');
+                break;
+            default:
+                await img.drawFromPNGdata(data, 0, 0, 72, 58, halign, valign, 'fit_or_shrink');
+        }
+    } catch (e) {
+        console.error('error drawing image:', e);
 
-				GraphicsRenderer.#drawTopbar(img, showTopbar, drawStyle, location)
-				return
-			}
-		}
+        switch (buttonStatusBar) {
+            case "none":
+            case "border":
+                img.box(0, 0, 72, 72, 'black');
+                img.drawAlignedText(2, 2, 68, 68, 'PNG ERROR', 'red', 10, 'center', 'center');
+                break;
+            case "top":
+                img.box(0, 14, 72, 72, 'black'); 
+				img.drawAlignedText(2, 18, 68, 52, 'PNG ERROR', 'red', 10, 'center', 'center');
+				break;
+            case "bottom":
+                img.box(0, 0, 72, 58, 'black'); 
+                img.drawAlignedText(2, 2, 68, 52, 'PNG ERROR', 'red', 10, 'center', 'center');
+                break;
+            default:
+                img.box(0, 14, 71, 57, 'black');
+                img.drawAlignedText(2, 18, 68, 52, 'PNG ERROR', 'red', 10, 'center', 'center');
+                break;
+        }
+
+        GraphicsRenderer.#drawTopbar(img, buttonStatusBar, drawStyle, location);
+        return;
+    }
+}
+
 
 		// Draw images from feedbacks
 		try {
 			for (const image of drawStyle.imageBuffers || []) {
 				if (image.buffer) {
-					const yOffset = showTopbar ? 14 : 0
+					const yOffset = buttonStatusBar ? 14 : 0
 
 					const x = image.x ?? 0
 					const y = yOffset + (image.y ?? 0)
@@ -262,11 +297,11 @@ export class GraphicsRenderer {
 			}
 		} catch (e) {
 			img.fillColor('black')
-			!showTopbar
+			!buttonStatusBar
 				? img.drawAlignedText(2, 2, 68, 68, 'IMAGE\\nDRAW\\nERROR', 'red', 10, 'center', 'center')
 				: img.drawAlignedText(2, 18, 68, 52, 'IMAGE\\nDRAW\\nERROR', 'red', 10, 'center', 'center')
 
-			GraphicsRenderer.#drawTopbar(img, showTopbar, drawStyle, location)
+			GraphicsRenderer.#drawTopbar(img, buttonStatusBar, drawStyle, location)
 			return
 		}
 
@@ -282,14 +317,17 @@ export class GraphicsRenderer {
 			fontSize = Number(drawStyle.size) || 'auto'
 		}
 
-		if (!showTopbar) {
+		if (buttonStatusBar == 'none' || buttonStatusBar == 'border') {
 			img.drawAlignedText(2, 1, 68, 70, drawStyle.text, parseColor(drawStyle.color), fontSize, halign, valign)
-		} else {
+		} else if(buttonStatusBar == 'top') {
 			img.drawAlignedText(2, 15, 68, 57, drawStyle.text, parseColor(drawStyle.color), fontSize, halign, valign)
+		}
+		else if(buttonStatusBar == 'bottom') {
+			img.drawAlignedText(2, 1, 68, 57, drawStyle.text, parseColor(drawStyle.color), fontSize, halign, valign)
 		}
 
 		// At last draw Topbar on top
-		GraphicsRenderer.#drawTopbar(img, showTopbar, drawStyle, location)
+		GraphicsRenderer.#drawTopbar(img, buttonStatusBar, drawStyle, location)
 	}
 
 	/**
@@ -297,86 +335,125 @@ export class GraphicsRenderer {
 	 */
 	static #drawTopbar(
 		img: Image,
-		showTopbar: boolean,
+		buttonStatusBar: 'default'|'top'|'bottom'|'border'|'none',
 		drawStyle: DrawStyleButtonModel,
 		location: ControlLocation | undefined
 	) {
-		if (!showTopbar) {
-			if (drawStyle.pushed) {
-				img.drawBorder(3, colorButtonYellow)
-			}
-		} else {
-			let step = ''
-			img.box(0, 0, 72, 13.5, colorBlack)
-			img.horizontalLine(13.5, colorButtonYellow)
-
-			if (typeof drawStyle.step_cycle === 'number' && location) {
-				step = `.${drawStyle.step_cycle}`
+		if (buttonStatusBar == 'border' || buttonStatusBar == 'none') {
+			if (drawStyle.pushed && buttonStatusBar == 'border') {
+				img.drawBorder(3, colorButtonYellow);
 			}
 
-			if (location === undefined) {
-				// Preview (no location)
-				img.drawTextLine(4, 2, `x.x${step}`, colorButtonYellow, 9)
-			} else if (drawStyle.pushed) {
-				img.box(0, 0, 72, 14, colorButtonYellow)
-				img.drawTextLine(4, 2, `${formatLocation(location)}${step}`, colorBlack, 9)
-			} else {
-				img.drawTextLine(4, 2, `${formatLocation(location)}${step}`, colorButtonYellow, 9)
-			}
-		}
+			let rightMax = 72;
+			rightMax = this.#drawStatusIcons(img, rightMax, drawStyle, location, buttonStatusBar);
 
-		// Draw status icons from right to left
-		let rightMax = 72
+		} else if (buttonStatusBar == 'top') {
+			this.#drawTopOrBottomBar(img, 13.5, drawStyle, location, 'top');
 
-		// first the cloud icon if present
-		if (drawStyle.cloud_error && showTopbar) {
-			img.drawPixelBuffer(rightMax - 17, 3, 15, 8, internalIcons.cloudError)
-			rightMax -= 17
-		} else if (drawStyle.cloud && showTopbar) {
-			img.drawPixelBuffer(rightMax - 17, 3, 15, 8, internalIcons.cloud)
-			rightMax -= 17
-		}
-
-		// next error or warning icon
-		if (location) {
-			switch (drawStyle.button_status) {
-				case 'error':
-					img.box(rightMax - 10, 3, rightMax - 2, 11, 'red')
-					rightMax -= 10
-					break
-				case 'warning':
-					img.drawFilledPath(
-						[
-							[rightMax - 10, 11],
-							[rightMax - 2, 11],
-							[rightMax - 6, 3],
-						],
-						'rgb(255, 127, 0)'
-					)
-					img.drawTextLineAligned(rightMax - 6, 11, '!', colorBlack, 7, 'center', 'bottom')
-					rightMax -= 10
-					break
-			}
-
-			// last running icon
-			if (drawStyle.action_running) {
-				//img.drawTextLine(55, 3, '►', 'rgb(0, 255, 0)', 8) // not as nice
-				let iconcolor = 'rgb(0, 255, 0)'
-				if (drawStyle.pushed) iconcolor = colorBlack
-				img.drawFilledPath(
-					[
-						[rightMax - 8, 3],
-						[rightMax - 2, 7],
-						[rightMax - 8, 11],
-					],
-					iconcolor
-				)
-				rightMax -= 8
-			}
+		} else if (buttonStatusBar == 'bottom') {
+			this.#drawTopOrBottomBar(img, 58.5, drawStyle, location, 'bottom');
 		}
 	}
 
-	/**
+	static #drawTopOrBottomBar(
+	img: Image,
+	horizontalLinePos: number,
+	drawStyle: DrawStyleButtonModel,
+	location: ControlLocation | undefined,
+	position: 'top' | 'bottom'
+) {
+	let step = '';
+	const textYPos = position === 'top' ? 2 : 60; // Y position for text
+	const boxYPos = position === 'top' ? 0 : 58.5; // Adjust rectangle (box) Y-position for top or bottom
+	const boxHeight = 13.5; // Consistent box height
+
+	// Draw the background box for the top or bottom bar
+	img.box(0, boxYPos, 72, boxYPos + boxHeight, colorBlack); 
+	img.horizontalLine(horizontalLinePos, colorButtonYellow); // Draw the horizontal line
+
+	// Determine the step text if there's a cycle number
+	if (typeof drawStyle.step_cycle === 'number' && location) {
+		step = `.${drawStyle.step_cycle}`;
+	}
+
+	// Draw text and yellow box when button is pushed
+	if (location === undefined) {
+		// If no location is provided, show default step text
+		img.drawTextLine(4, textYPos, `x.x${step}`, colorButtonYellow, 9);
+	} else if (drawStyle.pushed) {
+		// Draw yellow box and text when the button is pushed
+		img.box(0, boxYPos, 72, boxYPos + boxHeight, colorButtonYellow);
+		img.drawTextLine(4, textYPos, `${formatLocation(location)}${step}`, colorBlack, 9);
+	} else {
+		// Draw just the text for the non-pushed state
+		img.drawTextLine(4, textYPos, `${formatLocation(location)}${step}`, colorButtonYellow, 9);
+	}
+
+	// Draw icons on the right side
+	let rightMax = 72;
+	rightMax = this.#drawStatusIcons(img, rightMax, drawStyle, location, position);
+}
+
+
+	static #drawStatusIcons(
+		img: Image,
+		rightMax: number,
+		drawStyle: DrawStyleButtonModel,
+		location: ControlLocation | undefined,
+		buttonStatusBar: 'default' | 'top' | 'bottom' | 'border' | 'none'
+	) {
+		const iconYPos = buttonStatusBar === 'bottom' ? 61 : 3;
+		const iconYMax = buttonStatusBar === 'bottom' ? 69 : 11;
+
+		// Cloud icon
+		if (drawStyle.cloud_error && buttonStatusBar) {
+			img.drawPixelBuffer(rightMax - 17, 3, 15, 8, internalIcons.cloudError);
+			rightMax -= 17;
+		} else if (drawStyle.cloud && buttonStatusBar) {
+			img.drawPixelBuffer(rightMax - 17, 3, 15, 8, internalIcons.cloud);
+			rightMax -= 17;
+		}
+
+		// Error or warning icon
+		if (location) {
+			switch (drawStyle.button_status) {
+				case 'error':
+					img.box(rightMax - 10, iconYPos, rightMax - 2, iconYMax, 'red');
+					rightMax -= 10;
+					break;
+				case 'warning':
+					img.drawFilledPath(
+						[
+							[rightMax - 10, iconYMax],
+							[rightMax - 2, iconYMax],
+							[rightMax - 6, iconYPos],
+						],
+						'rgb(255, 127, 0)'
+					);
+					img.drawTextLineAligned(rightMax - 6, iconYMax, '!', colorBlack, 7, 'center', 'bottom');
+					rightMax -= 10;
+					break;
+			}
+
+			// Running icon
+			if (drawStyle.action_running) {
+				let iconcolor = drawStyle.pushed ? colorBlack : 'rgb(0, 255, 0)';
+				img.drawFilledPath(
+					[
+						[rightMax - 8, iconYPos],
+						[rightMax - 2, iconYPos + 4],
+						[rightMax - 8, iconYMax],
+					],
+					iconcolor
+				);
+				rightMax -= 8;
+			}
+		}
+		return rightMax;
+	}
+
+
+        /**
 	 * Draw pincode entry button for given number
 	 * @param num Display number
 	 */

@@ -35,7 +35,7 @@ export class DataUserConfig extends CoreBase {
 
 		page_direction_flipped: false,
 		page_plusminus: false,
-		remove_topbar: false,
+		remove_topbar: "top",
 
 		xkeys_enable: true,
 		xkeys_legacy_layout: false,

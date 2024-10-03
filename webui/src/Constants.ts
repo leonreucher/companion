@@ -16,8 +16,16 @@ export const FONT_SIZES: DropdownChoice[] = [
 
 export const SHOW_HIDE_TOP_BAR: DropdownChoice[] = [
 	{ id: 'default', label: 'Follow Default' },
-	{ id: true as any, label: 'Show' },
+	{ id: true as any, label: 'Top' },
 	{ id: false as any, label: 'Hide' },
+]
+
+export const BUTTON_INDICATOR_OPTIONS: DropdownChoice[] = [
+	{ id: 'default', label: 'Follow Default' },
+	{ id: 'top', label: 'Top' },
+	{ id: 'bottom', label: 'Bottom' },
+	{ id: 'border', label: 'Border' },
+	{ id: 'none', label: 'None' },
 ]
 
 export const PRIMARY_COLOR: string = '#d50215'

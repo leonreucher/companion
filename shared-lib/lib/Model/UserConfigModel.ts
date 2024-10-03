@@ -3,7 +3,7 @@ export interface UserConfigModel {
 
 	page_direction_flipped: boolean
 	page_plusminus: boolean
-	remove_topbar: boolean
+	remove_topbar: 'top'|'bottom'|'border'|'none'
 
 	xkeys_enable: boolean
 	xkeys_legacy_layout: boolean

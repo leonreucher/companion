@@ -43,7 +43,7 @@ export interface ButtonStyleProperties {
 
 	color: number
 	bgcolor: number
-	show_topbar: boolean | 'default' | undefined
+	show_topbar: 'default'|'top'|'bottom'|'border'|'none'
 
 	png64: string | null
 }

@@ -37,7 +37,7 @@ const CRASHED_WORKER_RETRY_COUNT = 10
 export interface GraphicsOptions {
 	page_direction_flipped: boolean
 	page_plusminus: boolean
-	remove_topbar: boolean
+    remove_topbar: 'default'|'top'|'bottom'|'border'|'none'
 }
 
 /**
@@ -175,7 +175,7 @@ export class GraphicsController extends CoreBase<GraphicsControllerEvents> {
 						let keyLocation: ControlLocation | undefined
 						if (buttonStyle.style === 'button') {
 							const globalShowTopBar = !this.#drawOptions.remove_topbar && buttonStyle.show_topbar === 'default'
-							keyLocation = globalShowTopBar || buttonStyle.show_topbar === true ? location : undefined
+							keyLocation = globalShowTopBar || buttonStyle.show_topbar != 'none' ? location : undefined
 						}
 						const key = JSON.stringify({ options: this.#drawOptions, buttonStyle, keyLocation, pagename })
 						render = this.#renderLRUCache.get(key)
@@ -297,7 +297,7 @@ export class GraphicsController extends CoreBase<GraphicsControllerEvents> {
 			step_cycle: undefined,
 			action_running: false,
 
-			show_topbar: buttonStyle.show_topbar,
+			show_topbar: buttonStyle.show_topbar ?? 'default',
 			alignment: buttonStyle.alignment ?? 'center:center',
 			pngalignment: buttonStyle.pngalignment ?? 'center:center',
 			png64: buttonStyle.png64 ?? null,
@@ -326,7 +326,7 @@ export class GraphicsController extends CoreBase<GraphicsControllerEvents> {
 			this.#drawOptions.page_plusminus = !!value
 			this.invalidatePageControls()
 		} else if (key == 'remove_topbar') {
-			this.#drawOptions.remove_topbar = !!value
+			this.#drawOptions.remove_topbar = value as 'default'|'top'|'bottom'|'border'|'none'
 			this.logger.silly('Topbar removed')
 			// Delay redrawing to give connections a chance to adjust
 			setTimeout(() => {

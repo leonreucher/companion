@@ -3,6 +3,8 @@ import { observer } from 'mobx-react-lite'
 import { UserConfigProps } from './Components/Common.js'
 import { UserConfigHeadingRow } from './Components/UserConfigHeadingRow.js'
 import { UserConfigSwitchRow } from './Components/UserConfigSwitchRow.js'
+import { BUTTON_INDICATOR_OPTIONS } from '../Constants.js'
+import { UserConfigDropDownRow } from './Components/UserConfigDropDownRow.js'
 
 export const ButtonsConfig = observer(function ButtonsConfig(props: UserConfigProps) {
 	return (
@@ -26,6 +28,13 @@ export const ButtonsConfig = observer(function ButtonsConfig(props: UserConfigPr
 				label="Show the topbar on each button. This can be overridden per-button"
 				field="remove_topbar"
 				inverted
+			/>
+			<UserConfigDropDownRow
+				userConfig={props}
+				choices={BUTTON_INDICATOR_OPTIONS.filter(option => option.id !== 'default')}
+				label="Configure how the status bar of buttons should get displayed. This can be overriden per-button"
+				field="remove_topbar"
+				multiple={false}
 			/>
 		</>
 	)
